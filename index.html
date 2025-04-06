@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .calculator {
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5),
+                        0 0 40px rgba(0, 255, 255, 0.3),
+                        0 0 80px rgba(0, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .btn {
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .display {
+            text-shadow: 0 0 5px rgba(0, 255, 255, 0.7);
+        }
+        
+        .operator {
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+        }
+        
+        .equals {
+            background: linear-gradient(135deg, #ff00cc, #ff0066);
+        }
+        
+        .clear {
+            background: linear-gradient(135deg, #ff3300, #ff6600);
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); }
+            100% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+        }
+        
+        .calculator:hover {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center p-4">
+    <div class="calculator bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-cyan-500">
+        <!-- Display -->
+        <div class="display bg-gray-900 rounded-xl p-4 mb-6 h-24 flex flex-col justify-between">
+            <div class="text-cyan-400 text-right text-lg font-mono h-6 overflow-hidden">
+                <span id="previous-operand"></span>
+            </div>
+            <div class="text-cyan-100 text-right text-4xl font-mono font-bold overflow-hidden">
+                <span id="current-operand">0</span>
+            </div>
+        </div>
+        
+        <!-- Buttons -->
+        <div class="grid grid-cols-4 gap-3">
+            <!-- Row 1 -->
+            <button class="clear btn col-span-2 py-4 rounded-xl text-white font-bold text-xl">
+                AC
+            </button>
+            <button class="operator btn py-4 rounded-xl text-white font-bold text-xl" data-operation="÷">
+                <i class="fas fa-divide"></i>
+            </button>
+            <button class="operator btn py-4 rounded-xl text-white font-bold text-xl" data-operation="×">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <!-- Row 2 -->
+            <button class="number btn bg-gray-700 py-4 rounded-xl text-white font-bold text-xl" data-number="7">
+                7
+            </button>
+            <button class="number btn bg-gray-700 py-4 rounded-xl text-white font-bold text-xl" data-number="8">
+                8
+            </button>
+            <button class="number btn bg-gray-700 py-4 rounded-xl text-white font-bold text-xl" data-number="9">
+                9
+            </button>
+            <button class="operator btn py-4 rounded-xl text-white font-bold text-xl" data-operation="-">
+                <i class="fas fa-minus"></i>
+            </button>
+            
+            <!-- Row 3 -->
+            <button class="number btn bg-gray-700 py-4 rounded-xl text-white font-bold text-xl" data-number="4">
+                4
+            </button>
+            <button class="number btn bg-gray-700 py-4 rounded-xl text-white font-bold text-xl" data-number="5">
+                5
+            </button>
+            <button class="number btn bg-gray-700 py-4 rounded-xl text-white font-bold text-xl" data-number="6">
+                6
+            </button>
+            <button class="operator btn py-4 rounded-xl text-white font-bold text-xl" data-operation="+">
+                <i class="fas fa-plus"></i>
+            </button>
+            
+            <!-- Row 4 -->
+            <button class="number btn bg-gray-700 py-4 rounded-xl text-white font-bold text-xl" data-number="1">
+                1
+            </button>
+            <button class="number btn bg-gray-700 py-4 rounded-xl text-white font-bold text-xl" data-number="2">
+                2
+            </button>
+            <button class="number btn bg-gray-700 py-4 rounded-xl text-white font-bold text-xl" data-number="3">
+                3
+            </button>
+            <button class="equals btn py-4 rounded-xl text-white font-bold text-xl" data-equals>
+                <i class="fas fa-equals"></i>
+            </button>
+            
+            <!-- Row 5 -->
+            <button class="number btn bg-gray-700 py-4 rounded-xl text-white font-bold text-xl" data-number="0">
+                0
+            </button>
+            <button class="number btn bg-gray-700 py-4 rounded-xl text-white font-bold text-xl" data-number=".">
+                .
+            </button>
+            <button class="btn bg-gray-700 py-4 rounded-xl text-white font-bold text-xl" data-delete>
+                <i class="fas fa-backspace"></i>
+            </button>
+            <button class="operator btn py-4 rounded-xl text-white font-bold text-xl" data-operation="%">
+                %
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const calculator = {
+                displayValue: '0',
+                firstOperand: null,
+                waitingForSecondOperand: false,
+                operator: null,
+            };
+
+            const updateDisplay = () => {
+                const currentOperandElement = document.getElementById('current-operand');
+                const previousOperandElement = document.getElementById('previous-operand');
+                
+                currentOperandElement.textContent = calculator.displayValue;
+                
+                if (calculator.firstOperand !== null && calculator.operator) {
+                    previousOperandElement.textContent = 
+                        `${calculator.firstOperand} ${calculator.operator}`;
+                } else {
+                    previousOperandElement.textContent = '';
+                }
+            };
+
+            const inputDigit = (digit) => {
+                const { displayValue, waitingForSecondOperand } = calculator;
+                
+                if (waitingForSecondOperand === true) {
+                    calculator.displayValue = digit;
+                    calculator.waitingForSecondOperand = false;
+                } else {
+                    calculator.displayValue = 
+                        displayValue === '0' ? digit : displayValue + digit;
+                }
+            };
+
+            const inputDecimal = (dot) => {
+                if (calculator.waitingForSecondOperand) {
+                    calculator.displayValue = '0.';
+                    calculator.waitingForSecondOperand = false;
+                    return;
+                }
+                
+                if (!calculator.displayValue.includes(dot)) {
+                    calculator.displayValue += dot;
+                }
+            };
+
+            const handleOperator = (nextOperator) => {
+                const { firstOperand, displayValue, operator } = calculator;
+                const inputValue = parseFloat(displayValue);
+                
+                if (operator && calculator.waitingForSecondOperand) {
+                    calculator.operator = nextOperator;
+                    return;
+                }
+                
+                if (firstOperand === null) {
+                    calculator.firstOperand = inputValue;
+                } else if (operator) {
+                    const result = performCalculation[operator](firstOperand, inputValue);
+                    calculator.displayValue = String(result);
+                    calculator.firstOperand = result;
+                }
+                
+                calculator.waitingForSecondOperand = true;
+                calculator.operator = nextOperator;
+            };
+
+            const performCalculation = {
+                '+': (firstOperand, secondOperand) => firstOperand + secondOperand,
+                '-': (firstOperand, secondOperand) => firstOperand - secondOperand,
+                '×': (firstOperand, secondOperand) => firstOperand * secondOperand,
+                '÷': (firstOperand, secondOperand) => firstOperand / secondOperand,
+                '%': (firstOperand, secondOperand) => firstOperand % secondOperand,
+            };
+
+            const resetCalculator = () => {
+                calculator.displayValue = '0';
+                calculator.firstOperand = null;
+                calculator.waitingForSecondOperand = false;
+                calculator.operator = null;
+            };
+
+            const deleteLastDigit = () => {
+                if (calculator.displayValue.length === 1) {
+                    calculator.displayValue = '0';
+                } else {
+                    calculator.displayValue = calculator.displayValue.slice(0, -1);
+                }
+            };
+
+            // Event listeners
+            document.querySelectorAll('.number').forEach(button => {
+                button.addEventListener('click', () => {
+                    if (button.dataset.number === '.') {
+                        inputDecimal(button.dataset.number);
+                    } else {
+                        inputDigit(button.dataset.number);
+                    }
+                    updateDisplay();
+                });
+            });
+
+            document.querySelectorAll('.operator').forEach(button => {
+                button.addEventListener('click', () => {
+                    handleOperator(button.dataset.operation);
+                    updateDisplay();
+                });
+            });
+
+            document.querySelector('[data-equals]').addEventListener('click', () => {
+                if (calculator.operator === null || calculator.waitingForSecondOperand) {
+                    return;
+                }
+                
+                const inputValue = parseFloat(calculator.displayValue);
+                const result = performCalculation[calculator.operator](calculator.firstOperand, inputValue);
+                
+                calculator.displayValue = String(result);
+                calculator.firstOperand = null;
+                calculator.waitingForSecondOperand = false;
+                calculator.operator = null;
+                
+                updateDisplay();
+            });
+
+            document.querySelector('.clear').addEventListener('click', () => {
+                resetCalculator();
+                updateDisplay();
+            });
+
+            document.querySelector('[data-delete]').addEventListener('click', () => {
+                deleteLastDigit();
+                updateDisplay();
+            });
+
+            // Keyboard support
+            document.addEventListener('keydown', (e) => {
+                if (e.key >= '0' && e.key <= '9') {
+                    inputDigit(e.key);
+                    updateDisplay();
+                } else if (e.key === '.') {
+                    inputDecimal(e.key);
+                    updateDisplay();
+                } else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/' || e.key === '%') {
+                    const op = e.key === '*' ? '×' : e.key === '/' ? '÷' : e.key;
+                    handleOperator(op);
+                    updateDisplay();
+                } else if (e.key === 'Enter' || e.key === '=') {
+                    if (calculator.operator === null || calculator.waitingForSecondOperand) {
+                        return;
+                    }
+                    
+                    const inputValue = parseFloat(calculator.displayValue);
+                    const result = performCalculation[calculator.operator](calculator.firstOperand, inputValue);
+                    
+                    calculator.displayValue = String(result);
+                    calculator.firstOperand = null;
+                    calculator.waitingForSecondOperand = false;
+                    calculator.operator = null;
+                    
+                    updateDisplay();
+                } else if (e.key === 'Escape') {
+                    resetCalculator();
+                    updateDisplay();
+                } else if (e.key === 'Backspace') {
+                    deleteLastDigit();
+                    updateDisplay();
+                }
+            });
+        });
+    </script>
+<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with &#x1F49C; by Uncanny Stranger</p></body>
+</html>
